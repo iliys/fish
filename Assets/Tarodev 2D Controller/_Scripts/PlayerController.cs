@@ -32,7 +32,7 @@ namespace TarodevController
         private void Awake()
         {
             _rb = GetComponent<Rigidbody2D>();
-            _col = GetComponent<CapsuleCollider2D>();
+            _col = GetComponentInChildren<CapsuleCollider2D>();
 
             _cachedQueryStartInColliders = Physics2D.queriesStartInColliders;
         }
@@ -49,6 +49,7 @@ namespace TarodevController
             {
                 JumpDown = Input.GetButtonDown("Jump") || Input.GetKeyDown(KeyCode.C),
                 JumpHeld = Input.GetButton("Jump") || Input.GetKey(KeyCode.C),
+                JumpReleased = Input.GetButtonUp("Jump") || Input.GetKeyUp(KeyCode.C),
                 Move = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"))
             };
 
@@ -72,12 +73,12 @@ namespace TarodevController
             HandleJump();
             HandleDirection();
             HandleGravity();
-            
+
             ApplyMovement();
         }
 
         #region Collisions
-        
+
         private float _frameLeftGrounded = float.MinValue;
         private bool _grounded;
 
@@ -132,7 +133,7 @@ namespace TarodevController
 
             if (!_jumpToConsume && !HasBufferedJump) return;
 
-            if (_grounded || CanUseCoyote) ExecuteJump();
+            if ((_grounded || CanUseCoyote) && _frameInput.JumpReleased) ExecuteJump();
 
             _jumpToConsume = false;
         }
@@ -184,7 +185,13 @@ namespace TarodevController
 
         #endregion
 
-        private void ApplyMovement() => _rb.velocity = _frameVelocity;
+        private void ApplyMovement()
+        {
+            _rb.velocity = _frameVelocity;
+            if (!_grounded) {
+                _rb.rotation += 15;
+            }
+        }
 
 #if UNITY_EDITOR
         private void OnValidate()
@@ -198,6 +205,7 @@ namespace TarodevController
     {
         public bool JumpDown;
         public bool JumpHeld;
+        public bool JumpReleased;
         public Vector2 Move;
     }
 
